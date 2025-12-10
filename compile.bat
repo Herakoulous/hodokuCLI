@@ -1,0 +1,1 @@
+javac -cp HoDoKu.jar HoDoKuCLI.java

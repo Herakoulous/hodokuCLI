@@ -1,0 +1,1 @@
+java -cp .;HoDoKu.jar HoDoKuCLI %1
