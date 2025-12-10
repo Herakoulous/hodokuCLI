@@ -3,7 +3,7 @@ const { exec } = require('child_process');
 const app = express();
 
 app.get('/hint/:puzzle', (req, res) => {
- exec(`java -cp .:Hodoku.jar HoDoKuCLI "${req.params.puzzle}"`, (err, stdout) => {
+exec(`java -cp .:Hodoku.jar HoDoKuCLI "${req.params.puzzle}"`, (err, stdout) => {
     const lines = stdout.trim().split('\n');
     res.send(lines[lines.length - 1]);
   });
