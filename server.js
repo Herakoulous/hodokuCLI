@@ -15,24 +15,31 @@ app.get('/', (req, res) => {
 });
 
 app.get('/hint/:puzzle', (req, res) => {
-  console.log('Received request for puzzle:', req.params.puzzle);
+  const puzzle = req.params.puzzle;
+  console.log('=== START REQUEST ===');
+  console.log('Puzzle:', puzzle);
+  console.log('Time:', new Date().toISOString());
   
-  const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${req.params.puzzle}"`;
+  const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}"`;
+  console.log('Command:', cmd);
   
-  exec(cmd, { maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
-    console.log('Process completed');
-    console.log('stdout:', stdout);
-    console.log('stderr:', stderr);
+  const child = exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
+    console.log('=== CALLBACK FIRED ===');
+    console.log('Error:', err);
+    console.log('Stdout length:', stdout?.length);
+    console.log('Stderr length:', stderr?.length);
+    console.log('Stdout:', stdout);
+    console.log('Stderr:', stderr);
     
-    // Java logs to stderr but that's OK - check stdout for actual hint
-    if (stdout && stdout.trim()) {
-      const lines = stdout.trim().split('\n');
-      const hint = lines[lines.length - 1];
-      return res.send(hint);
-    }
+    const response = `Error: ${err?.message || 'none'}\n\nStdout:\n${stdout}\n\nStderr:\n${stderr}`;
+    console.log('=== SENDING RESPONSE ===');
+    console.log(response);
     
-    // If no stdout, something went wrong
-    res.status(500).send(`No output received\nStderr: ${stderr}\nError: ${err?.message || 'none'}`);
+    res.send(response);
+  });
+  
+  child.on('exit', (code) => {
+    console.log('Process exited with code:', code);
   });
 });
 
