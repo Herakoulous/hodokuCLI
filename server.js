@@ -3,6 +3,12 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const app = express();
 
+app.get('/test-java', (req, res) => {
+  exec('java -version', (err, stdout, stderr) => {
+    res.send(`Java version:\n${stderr}\n${stdout}`);
+  });
+});
+
 app.get('/', (req, res) => {
   const files = fs.readdirSync('.');
   res.send(`Server is running. Files: ${files.join(', ')}`);
