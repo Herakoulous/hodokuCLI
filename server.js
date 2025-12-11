@@ -19,15 +19,20 @@ app.get('/hint/:puzzle', (req, res) => {
   
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${req.params.puzzle}"`;
   
-  exec(cmd, { timeout: 10000 }, (err, stdout, stderr) => {
-    // Java INFO logs go to stderr, ignore them
-    if (err && !stdout) {
-      return res.status(500).send(`Error: ${err.message}\n\nStderr:\n${stderr}`);
+  exec(cmd, { maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+    console.log('Process completed');
+    console.log('stdout:', stdout);
+    console.log('stderr:', stderr);
+    
+    // Java logs to stderr but that's OK - check stdout for actual hint
+    if (stdout && stdout.trim()) {
+      const lines = stdout.trim().split('\n');
+      const hint = lines[lines.length - 1];
+      return res.send(hint);
     }
     
-    const lines = stdout.trim().split('\n');
-    const hint = lines[lines.length - 1] || 'No hint available';
-    res.send(hint);
+    // If no stdout, something went wrong
+    res.status(500).send(`No output received\nStderr: ${stderr}\nError: ${err?.message || 'none'}`);
   });
 });
 
