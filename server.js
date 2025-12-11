@@ -16,30 +16,22 @@ app.get('/', (req, res) => {
 
 app.get('/hint/:puzzle', (req, res) => {
   const puzzle = req.params.puzzle;
-  console.log('=== START REQUEST ===');
-  console.log('Puzzle:', puzzle);
-  console.log('Time:', new Date().toISOString());
-  
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}"`;
-  console.log('Command:', cmd);
   
-  const child = exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
-    console.log('=== CALLBACK FIRED ===');
-    console.log('Error:', err);
-    console.log('Stdout length:', stdout?.length);
-    console.log('Stderr length:', stderr?.length);
+  exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
     console.log('Stdout:', stdout);
     console.log('Stderr:', stderr);
     
-    const response = `Error: ${err?.message || 'none'}\n\nStdout:\n${stdout}\n\nStderr:\n${stderr}`;
-    console.log('=== SENDING RESPONSE ===');
-    console.log(response);
+    // If we have stdout, ignore the error (it's just config file write failure)
+    if (stdout && stdout.trim()) {
+      const lines = stdout.trim().split('\n');
+      const hint = lines[lines.length - 1];
+      console.log('Sending hint:', hint);
+      return res.send(hint);
+    }
     
-    res.send(response);
-  });
-  
-  child.on('exit', (code) => {
-    console.log('Process exited with code:', code);
+    // Only error if no output
+    res.status(500).send(`No output\nStderr: ${stderr}`);
   });
 });
 
