@@ -19,15 +19,22 @@ app.get('/hint/:puzzle', (req, res) => {
   
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${req.params.puzzle}"`;
   
-  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
-    // Java INFO logs go to stderr, ignore them
-    if (err && !stdout) {
-      return res.status(500).send(`Error: ${err.message}\n\nStderr:\n${stderr}`);
+  exec(cmd, { timeout: 30000, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+    // Process completed (success or failure)
+    if (err && err.killed) {
+      // Only error if actually killed by timeout
+      return res.status(500).send(`Timeout: Process took too long`);
     }
     
-    const lines = stdout.trim().split('\n');
-    const hint = lines[lines.length - 1] || 'No hint available';
-    res.send(hint);
+    if (stdout && stdout.trim()) {
+      // Got output - extract hint
+      const lines = stdout.trim().split('\n');
+      const hint = lines[lines.length - 1];
+      return res.send(hint);
+    }
+    
+    // No output
+    res.status(500).send(`No hint generated\nStderr: ${stderr}`);
   });
 });
 
