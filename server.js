@@ -18,7 +18,7 @@ app.get('/hint/:puzzle', (req, res) => {
   const puzzle = req.params.puzzle;
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}"`;
   
-  exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
+  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
     console.log('Stdout:', stdout);
     console.log('Stderr:', stderr);
     
