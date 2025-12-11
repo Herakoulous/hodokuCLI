@@ -19,7 +19,7 @@ app.get('/hint/:puzzle', (req, res) => {
   
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${req.params.puzzle}"`;
   
-  exec(cmd, { timeout: 1000 }, (err, stdout, stderr) => {
+  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
     // Java INFO logs go to stderr, ignore them
     if (err && !stdout) {
       return res.status(500).send(`Error: ${err.message}\n\nStderr:\n${stderr}`);
