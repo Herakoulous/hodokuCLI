@@ -1,6 +1,12 @@
 const express = require('express');
 const { exec } = require('child_process');
+const fs = require('fs');
 const app = express();
+
+app.get('/', (req, res) => {
+  const files = fs.readdirSync('.');
+  res.send(`Server is running. Files: ${files.join(', ')}`);
+});
 
 app.get('/hint/:puzzle', (req, res) => {
   console.log('Received request for puzzle:', req.params.puzzle);
