@@ -19,7 +19,7 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
   const step = req.params.step || '1';
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}" ${step}`;
   
-  exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
+  exec(cmd, { timeout: 4000 }, (err, stdout, stderr) => {
     if (stdout && stdout.trim()) {
       const lines = stdout.trim().split('\n');
       const hint = lines[lines.length - 1];
