@@ -14,26 +14,28 @@ app.get('/', (req, res) => {
   res.send(`Server is running. Files: ${files.join(', ')}`);
 });
 
-app.get('/hint/:puzzle', (req, res) => {
+app.get('/hint/:puzzle/:step?', (req, res) => {
   const puzzle = req.params.puzzle;
-  const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}"`;
+  const step = req.params.step || '1';
+  const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}" ${step}`;
   
-  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
-    console.log('Stdout:', stdout);
-    console.log('Stderr:', stderr);
-    
-    // If we have stdout, ignore the error (it's just config file write failure)
+  exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
     if (stdout && stdout.trim()) {
       const lines = stdout.trim().split('\n');
       const hint = lines[lines.length - 1];
-      console.log('Sending hint:', hint);
       return res.send(hint);
     }
     
-    // Only error if no output
     res.status(500).send(`No output\nStderr: ${stderr}`);
   });
 });
+```
+
+**Usage:**
+```
+// /hint/530070000.../1  -> First step
+// /hint/530070000.../2  -> Second step
+// /hint/530070000.../3  -> Third step
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
