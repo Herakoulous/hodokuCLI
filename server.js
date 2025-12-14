@@ -29,13 +29,6 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
     res.status(500).send(`No output\nStderr: ${stderr}`);
   });
 });
-```
-
-**Usage:**
-```
-// /hint/530070000.../1  -> First step
-// /hint/530070000.../2  -> Second step
-// /hint/530070000.../3  -> Third step
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
