@@ -58,26 +58,27 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
     console.log('📤 Stderr chunk received');
   });
   
-  child.on('close', (code) => {
-    if (responded) return;
-    responded = true;
-    
-    const elapsed = Date.now() - startTime;
-    console.log('========== PROCESS COMPLETED ==========');
-    console.log('Exit code:', code);
-    console.log('Elapsed time:', elapsed + 'ms');
-    console.log('Full stdout:', stdout);
-    
-    if (stdout.trim()) {
-      const lines = stdout.trim().split('\n');
-      const hint = lines[lines.length - 1];
-      console.log('✅ SENDING HINT:', hint);
-      return res.send(hint);
-    }
-    
-    console.log('❌ NO OUTPUT');
-    res.status(500).send(`Exit code ${code}, no output after ${elapsed}ms`);
-  });
+ child.on('close', (code) => {
+  if (responded) return;
+  responded = true;
+  
+  const elapsed = Date.now() - startTime;
+  console.log('========== PROCESS COMPLETED ==========');
+  console.log('Exit code:', code);
+  console.log('Elapsed time:', elapsed + 'ms');
+  console.log('Full stdout:', stdout);
+  console.log('Full stderr:', stderr);  // Add this
+  
+  if (stdout.trim()) {
+    const lines = stdout.trim().split('\n');
+    const hint = lines[lines.length - 1];
+    console.log('✅ SENDING HINT:', hint);
+    return res.send(hint);
+  }
+  
+  console.log('❌ NO OUTPUT');
+  res.status(500).send(`Exit code ${code}\nStderr: ${stderr}`);
+});
   
   child.on('error', (err) => {
     if (responded) return;
