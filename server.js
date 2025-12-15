@@ -32,17 +32,24 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
   const step = req.params.step || '1';
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}" ${step}`;
   
-  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
+  exec(cmd, (err, stdout, stderr) => {
+    // Log everything
+    console.log('Process completed');
+    console.log('Stdout:', stdout);
+    console.log('Stderr:', stderr);
+    console.log('Error:', err);
+    
+    // Send response immediately when callback fires
     if (stdout && stdout.trim()) {
       const lines = stdout.trim().split('\n');
       const hint = lines[lines.length - 1];
       return res.send(hint);
     }
     
-    res.status(500).send(`No output\nStderr: ${stderr}`);
+    // If no stdout, send the actual error details
+    res.status(500).send(`No output\nStderr: ${stderr}\nError: ${err?.message || 'none'}`);
   });
 });
-
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
