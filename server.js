@@ -14,6 +14,19 @@ app.get('/', (req, res) => {
   res.send(`Server is running. Files: ${files.join(', ')}`);
 });
 
+app.get('/warmup', (req, res) => {
+  console.log('Warmup request - running Java');
+  
+  // Run a quick Java command to warm up JVM + HoDoKu
+  const testPuzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+  const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${testPuzzle}" 1`;
+  
+  exec(cmd, { timeout: 30000 }, (err, stdout, stderr) => {
+    console.log('Warmup complete');
+    res.send('Server warm and ready');
+  });
+});
+
 app.get('/hint/:puzzle/:step?', (req, res) => {
   const puzzle = req.params.puzzle;
   const step = req.params.step || '1';
