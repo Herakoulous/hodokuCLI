@@ -27,29 +27,63 @@ app.get('/warmup', (req, res) => {
   });
 });
 
+const { spawn } = require('child_process');
+
 app.get('/hint/:puzzle/:step?', (req, res) => {
   const puzzle = req.params.puzzle;
   const step = req.params.step || '1';
-  const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}" ${step}`;
   
-  exec(cmd, (err, stdout, stderr) => {
-    // Log everything
-    console.log('Process completed');
-    console.log('Stdout:', stdout);
-    console.log('Stderr:', stderr);
-    console.log('Error:', err);
+  console.log('========== NEW HINT REQUEST ==========');
+  console.log('Puzzle:', puzzle);
+  console.log('Step:', step);
+  console.log('Time:', new Date().toISOString());
+  
+  const startTime = Date.now();
+  
+  const child = spawn('java', ['-cp', '.:Hodoku.jar', 'HoDoKuCLI', puzzle, step]);
+  
+  let stdout = '';
+  let stderr = '';
+  
+  child.stdout.on('data', (data) => {
+    const chunk = data.toString();
+    console.log('📤 Stdout chunk:', chunk);
+    stdout += chunk;
+  });
+  
+  child.stderr.on('data', (data) => {
+    const chunk = data.toString();
+    console.log('📤 Stderr chunk:', chunk);
+    stderr += chunk;
+  });
+  
+  child.on('close', (code) => {
+    const elapsed = Date.now() - startTime;
+    console.log('========== PROCESS COMPLETED ==========');
+    console.log('Exit code:', code);
+    console.log('Elapsed time:', elapsed + 'ms');
+    console.log('Full stdout:', stdout);
+    console.log('Full stderr:', stderr);
     
-    // Send response immediately when callback fires
-    if (stdout && stdout.trim()) {
+    if (stdout.trim()) {
       const lines = stdout.trim().split('\n');
       const hint = lines[lines.length - 1];
+      console.log('✅ SENDING HINT:', hint);
+      console.log('======================================');
       return res.send(hint);
     }
     
-    // If no stdout, send the actual error details
-    res.status(500).send(`No output\nStderr: ${stderr}\nError: ${err?.message || 'none'}`);
+    console.log('❌ NO OUTPUT - sending error');
+    console.log('======================================');
+    res.status(500).send(`No output\nStderr: ${stderr}`);
+  });
+  
+  child.on('error', (err) => {
+    console.log('❌ PROCESS ERROR:', err.message);
+    res.status(500).send(`Process error: ${err.message}`);
   });
 });
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
