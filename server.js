@@ -35,10 +35,13 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
   
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}" ${step}`;
   
-  exec(cmd, (err, stdout, stderr) => {
-    console.log('Java completed');
+  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
+    console.log('Callback fired');
+    console.log('Error:', err?.message);
     console.log('Stdout:', stdout);
+    console.log('Stderr:', stderr);
     
+    // Ignore timeout errors if we got output
     if (stdout && stdout.trim()) {
       const lines = stdout.trim().split('\n');
       const hint = lines[lines.length - 1];
@@ -46,7 +49,8 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
       return res.send(hint);
     }
     
-    res.status(500).send(`No output\nStderr: ${stderr}`);
+    console.log('No output or error');
+    res.status(500).send(`Error: ${err?.message || 'No output'}\nStderr: ${stderr}`);
   });
 });
 
