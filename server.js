@@ -36,9 +36,9 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
   console.log('========== NEW HINT REQUEST ==========');
   console.log('Puzzle:', puzzle);
   console.log('Step:', step);
-  console.log('Time:', new Date().toISOString());
   
   const startTime = Date.now();
+  let responded = false;
   
   const child = spawn('java', ['-cp', '.:Hodoku.jar', 'HoDoKuCLI', puzzle, step]);
   
@@ -46,41 +46,41 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
   let stderr = '';
   
   child.stdout.on('data', (data) => {
-    const chunk = data.toString();
-    console.log('📤 Stdout chunk:', chunk);
-    stdout += chunk;
+    stdout += data.toString();
+    console.log('📤 Stdout chunk received');
   });
   
   child.stderr.on('data', (data) => {
-    const chunk = data.toString();
-    console.log('📤 Stderr chunk:', chunk);
-    stderr += chunk;
+    stderr += data.toString();
+    console.log('📤 Stderr chunk received');
   });
   
   child.on('close', (code) => {
+    if (responded) return;
+    responded = true;
+    
     const elapsed = Date.now() - startTime;
     console.log('========== PROCESS COMPLETED ==========');
     console.log('Exit code:', code);
     console.log('Elapsed time:', elapsed + 'ms');
-    console.log('Full stdout:', stdout);
-    console.log('Full stderr:', stderr);
+    console.log('Stdout length:', stdout.length);
     
     if (stdout.trim()) {
       const lines = stdout.trim().split('\n');
       const hint = lines[lines.length - 1];
       console.log('✅ SENDING HINT:', hint);
-      console.log('======================================');
       return res.send(hint);
     }
     
-    console.log('❌ NO OUTPUT - sending error');
-    console.log('======================================');
-    res.status(500).send(`No output\nStderr: ${stderr}`);
+    console.log('❌ NO OUTPUT');
+    res.status(500).send(`Process exited with code ${code}\nNo output after ${elapsed}ms`);
   });
   
   child.on('error', (err) => {
-    console.log('❌ PROCESS ERROR:', err.message);
-    res.status(500).send(`Process error: ${err.message}`);
+    if (responded) return;
+    responded = true;
+    console.log('❌ SPAWN ERROR:', err.message);
+    res.status(500).send(`Spawn error: ${err.message}`);
   });
 });
 
