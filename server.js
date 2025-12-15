@@ -28,32 +28,56 @@ app.get('/test-java', (req, res) => {
 app.get('/hint/:puzzle/:step?', (req, res) => {
   const puzzle = req.params.puzzle;
   const step = req.params.step || '1';
-  
-  console.log('========== HINT REQUEST ==========');
-  console.log('Puzzle:', puzzle);
-  console.log('Step:', step);
-  
   const cmd = `java -cp .:Hodoku.jar HoDoKuCLI "${puzzle}" ${step}`;
   
-  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
-    console.log('Callback fired');
-    console.log('Error:', err?.message);
-    console.log('Stdout:', stdout);
-    console.log('Stderr:', stderr);
-    
-    // Ignore timeout errors if we got output
-    if (stdout && stdout.trim()) {
-      const lines = stdout.trim().split('\n');
-      const hint = lines[lines.length - 1];
-      console.log('Sending:', hint);
-      return res.send(hint);
+  console.log('Starting Java process');
+  let responded = false;
+  
+  const child = exec(cmd, { timeout: 30000 });
+  let stdout = '';
+  let stderr = '';
+  
+  child.stdout.on('data', (data) => {
+    stdout += data.toString();
+  });
+  
+  child.stderr.on('data', (data) => {
+    stderr += data.toString();
+  });
+  
+  // Check every 500ms if we have output
+  const checkInterval = setInterval(() => {
+    if (responded) {
+      clearInterval(checkInterval);
+      return;
     }
     
-    console.log('No output or error');
-    res.status(500).send(`Error: ${err?.message || 'No output'}\nStderr: ${stderr}`);
+    if (stdout.trim()) {
+      responded = true;
+      clearInterval(checkInterval);
+      child.kill(); // Stop Java if still running
+      
+      const lines = stdout.trim().split('\n');
+      const hint = lines[lines.length - 1];
+      console.log('Got output, sending:', hint);
+      res.send(hint);
+    }
+  }, 500);
+  
+  child.on('close', (code) => {
+    clearInterval(checkInterval);
+    if (responded) return;
+    responded = true;
+    
+    console.log('Process ended, code:', code);
+    if (stdout.trim()) {
+      const lines = stdout.trim().split('\n');
+      return res.send(lines[lines.length - 1]);
+    }
+    
+    res.status(500).send('No output');
   });
 });
-
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
