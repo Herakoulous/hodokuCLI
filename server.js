@@ -40,7 +40,10 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
   const startTime = Date.now();
   let responded = false;
   
-  const child = spawn('java', ['-cp', '.:Hodoku.jar', 'HoDoKuCLI', puzzle, step]);
+  // Use shell: true to find java in PATH
+  const child = spawn('java', ['-cp', '.:Hodoku.jar', 'HoDoKuCLI', puzzle, step], {
+    shell: true
+  });
   
   let stdout = '';
   let stderr = '';
@@ -63,7 +66,7 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
     console.log('========== PROCESS COMPLETED ==========');
     console.log('Exit code:', code);
     console.log('Elapsed time:', elapsed + 'ms');
-    console.log('Stdout length:', stdout.length);
+    console.log('Full stdout:', stdout);
     
     if (stdout.trim()) {
       const lines = stdout.trim().split('\n');
@@ -73,7 +76,7 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
     }
     
     console.log('❌ NO OUTPUT');
-    res.status(500).send(`Process exited with code ${code}\nNo output after ${elapsed}ms`);
+    res.status(500).send(`Exit code ${code}, no output after ${elapsed}ms`);
   });
   
   child.on('error', (err) => {
