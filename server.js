@@ -33,7 +33,7 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
   console.log('Starting Java process');
   let responded = false;
   
-  const child = exec(cmd, { timeout: 30000 });
+  const child = exec(cmd, { timeout: 10000 });
   let stdout = '';
   let stderr = '';
   
@@ -78,6 +78,7 @@ app.get('/hint/:puzzle/:step?', (req, res) => {
     res.status(500).send('No output');
   });
 });
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
